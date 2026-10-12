@@ -243,17 +243,6 @@ form,
   font-size: 18px;
 }
 
-.title-icon {
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgb(0, 128, 0);
-  color: white;
-  border-radius: 12px;
-}
-
 label {
   display: block;
   margin-bottom: 8px;
