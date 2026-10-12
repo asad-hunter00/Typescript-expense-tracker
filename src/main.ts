@@ -48,59 +48,71 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 let chart: Chart;
 
 function render() {
-  const income = payments
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
+  let income = 0;
+  let expense = 0;
 
-  const expense = payments
-    .filter((item) => item.type === "expense")
-    .reduce((sum, item) => sum + item.amount, 0);
+  for (const item of payments) {
+    if (item.type === "income") {
+      income += item.amount;
+    } else {
+      expense += item.amount;
+    }
+  }
 
   const balance = income - expense;
 
-  const options = categories
-    .map((c) => `<option value="${c}">${c}</option>`)
-    .join("");
+  let options = "";
 
-  const list = payments.length
-    ? payments
-        .map((item) => {
-          const isIncome = item.type === "income";
-          const sign = isIncome ? "+" : "-";
-          const name = isIncome ? "Kirim" : "Chiqim";
-          const icon = isIncome ? "fa-arrow-trend-up" : "fa-arrow-trend-down";
+  for (const category of categories) {
+    options += `<option value="${category}">${category}</option>`;
+  }
 
-          return `
-            <div class="transaction">
-              <div class="transaction-info">
-                <div class="transaction-icon ${item.type}">
-                  <i class="fa-solid ${icon}"></i>
-                </div>
+  let list = "";
 
-                <div>
-                  <strong>${item.title}</strong>
-                  <p>${name} • ${item.category}</p>
-                </div>
-              </div>
+  for (const item of payments) {
+    let sign = "-";
+    let name = "Chiqim";
+    let icon = "fa-arrow-trend-down";
 
-              <div class="transaction-actions">
-                <strong class="${item.type}">
-                  ${sign}${item.amount.toLocaleString()} so'm
-                </strong>
+    if (item.type === "income") {
+      sign = "+";
+      name = "Kirim";
+      icon = "fa-arrow-trend-up";
+    }
 
-                <button
-                  class="delete"
-                  onclick="deletePayment(${item.id})"
-                  title="O'chirish"
-                >
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          `;
-        })
-        .join("")
-    : `<p class="empty">Hozircha tranzaksiyalar yo'q</p>`;
+    list += `
+      <div class="transaction">
+        <div class="transaction-info">
+          <div class="transaction-icon ${item.type}">
+            <i class="fa-solid ${icon}"></i>
+          </div>
+
+          <div>
+            <strong>${item.title}</strong>
+            <p>${name} • ${item.category}</p>
+          </div>
+        </div>
+
+        <div class="transaction-actions">
+          <strong class="${item.type}">
+            ${sign}${item.amount.toLocaleString()} so'm
+          </strong>
+
+          <button
+            class="delete"
+            onclick="deletePayment(${item.id})"
+            title="O'chirish"
+          >
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (payments.length === 0) {
+    list = `<p class="empty">Hozircha tranzaksiyalar yo'q</p>`;
+  }
 
   app.innerHTML = `
     <div class="dashboard">
@@ -238,7 +250,9 @@ function render() {
     </div>
   `;
 
-  if (chart) chart.destroy();
+  if (chart) {
+    chart.destroy();
+  }
 
   chart = new Chart(document.querySelector<HTMLCanvasElement>("#moneyChart")!, {
     type: "doughnut",
@@ -260,10 +274,6 @@ function render() {
       plugins: {
         legend: {
           position: "bottom",
-          labels: {
-            padding: 20,
-            usePointStyle: true,
-          },
         },
       },
     },
@@ -274,15 +284,18 @@ function addPayment(event: SubmitEvent) {
   event.preventDefault();
 
   const title = (document.querySelector("#title") as HTMLInputElement).value;
+
   const amount = Number(
     (document.querySelector("#amount") as HTMLInputElement).value,
   );
+
   const type = (document.querySelector("#type") as HTMLSelectElement)
     .value as Transaction["type"];
+
   const category = (document.querySelector("#category") as HTMLSelectElement)
     .value;
 
-  if (!title.trim() || amount <= 0) {
+  if (title.trim() === "" || amount <= 0) {
     alert("Ma'lumotlarni to'g'ri kiriting!");
     return;
   }
@@ -290,9 +303,9 @@ function addPayment(event: SubmitEvent) {
   payments.push({
     id: Date.now(),
     title: title.trim(),
-    amount,
-    type,
-    category,
+    amount: amount,
+    type: type,
+    category: category,
   });
 
   localStorage.setItem("payments", JSON.stringify(payments));
@@ -301,9 +314,19 @@ function addPayment(event: SubmitEvent) {
 }
 
 function deletePayment(id: number) {
-  if (!confirm("rostdan ham o'chirilsinmi?")) return;
+  if (!confirm("Rostdan ham o'chirilsinmi?")) {
+    return;
+  }
 
-  payments = payments.filter((item) => item.id !== id);
+  const newPayments: Transaction[] = [];
+
+  for (const item of payments) {
+    if (item.id !== id) {
+      newPayments.push(item);
+    }
+  }
+
+  payments = newPayments;
 
   localStorage.setItem("payments", JSON.stringify(payments));
 
